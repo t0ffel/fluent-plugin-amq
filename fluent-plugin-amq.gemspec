@@ -2,11 +2,11 @@
 $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
-    s.name              = "fluent-plugin-amqp"
+    s.name              = "fluent-plugin-amq"
     s.version           = "0.0.1"
     s.authors           = ["Anton Sherkhonov"]
     s.email             = ["sherkhonov@gmail.com"]
-    s.homepage          = "https://github.com/t0ffel/fluent-plugin-amqp"
+    s.homepage          = "https://github.com/t0ffel/fluent-plugin-amq"
     s.summary           = "AMQP Qpid input plugin for fluentd"
     s.description       = %q"AMQP Qpid input plugin for fluentd"
 

@@ -5,7 +5,7 @@ require 'fluent/input'
 
 module Fluent
   class AMQPInput < Input
-    NAME = 'amqp'
+    NAME = 'amq'
     Plugin.register_input(NAME, self)
 
     def initialize

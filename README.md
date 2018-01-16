@@ -1,9 +1,9 @@
 # fluent-plugin-amqp
-AMQP Qpid input plugin for fluentd
+ActiveMQ Qpid input plugin for fluentd
 
 ## Overview
 
-Fluentd plugin to listen to secured AMQP message bus.
+Fluentd plugin to listen to secured ActiveMQ message bus (Not RabbitMQ).
 
 ## Why this plugin was created?
 
@@ -27,7 +27,7 @@ You need to install Qpid proton libraries before installing this plugin (RedHat/
 Here is the sample configuration of the plugin
 
     <source>
-      @type amqp
+      @type amq
       url amqps://messaging:5671
       tag prefix.tag
       queue Consumer.client.myclient.VirtualTopic.>
