@@ -4,7 +4,7 @@ require 'fluent/input'
 
 
 module Fluent
-  class AMQPInput < Input
+  class AMQInput < Input
     NAME = 'amq'
     Plugin.register_input(NAME, self)
 
@@ -43,11 +43,12 @@ module Fluent
       @thread = Thread.new do
         while !@stop
           begin
-            h = Handler.new log, @url, @tag, @router, @ssl_domain, @queue
+            h = Client.new log, @url, @tag, @router, @ssl_domain, @queue
             @container = Qpid::Proton::Container.new(h)
             @container.run
           rescue => e
             log.error "Error connecting to the AMQP bus #{e.message}"
+            log.error "Backtrace: #{e.backtrace}"
           end
         end
       end
@@ -61,7 +62,7 @@ module Fluent
     rescue
     end
 
-    class Handler < Qpid::Proton::MessagingHandler
+    class Client < Qpid::Proton::MessagingHandler
 
       def initialize(log, url, tag, router, ssl_domain, queue)
         super()
@@ -87,7 +88,7 @@ module Fluent
         @log.debug "Connection secured with #{c.transport.ssl.protocol_name.inspect}"
       end
 
-      def build_record(message)
+      def build_json_record(message)
         record = {
           body: JSON.parse(message.body),
           address: message.address,
@@ -104,12 +105,26 @@ module Fluent
         record
       end
 
+      def build_record(message)
+        begin
+          record = build_json_record(message)
+        rescue => e
+          @log.warn "Error decoding JSON from the body of `#{message}`"
+          record = { body: message }
+        end
+        record
+      end
+
       def on_message(delivery, message)
         record = build_record(message)
         time = Engine.now
 
         tag = (message.address and message.address.size > 0) ? "#{@tag}.#{message.address.sub("topic://","")}" : @tag
         @router.emit(tag, time, record)
+      end
+
+      def on_transport_error(transport)
+        raise "Connection error: #{transport.condition}"
       end
 
       def on_disconnect event
