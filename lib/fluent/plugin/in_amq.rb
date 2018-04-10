@@ -28,8 +28,14 @@ module Fluent
       raise ConfigError, "#{NAME}: 'url' is required" unless @url
       raise ConfigError, "#{NAME}: 'cert' is required" unless @cert
       raise ConfigError, "#{NAME}: 'private_key' is required" unless @private_key
+      raise ConfigError, "#{NAME}: '#{@cert}' file is missing" unless File.file?(@cert)
+      raise ConfigError, "#{NAME}: '#{@private_key}' file is missing" unless File.file?(@private_key)
       @ssl_domain = Qpid::Proton::SSLDomain.new(Qpid::Proton::SSLDomain::MODE_CLIENT)
-      @ssl_domain.credentials(@cert, @private_key, @key_pass)
+      begin
+        @ssl_domain.credentials(@cert, @private_key, @key_pass)
+      rescue Exception => e
+        raise ConfigError, "#{NAME}: Unable to create credentials: #{e}"
+      end
       begin
         @url = Qpid::Proton::uri @url
       rescue Exception => e
@@ -88,12 +94,16 @@ module Fluent
         @log.debug "Connection secured with #{c.transport.ssl.protocol_name.inspect}"
       end
 
-      def build_json_record(message)
-        record = {
-          body: JSON.parse(message.body),
-          address: message.address,
-          msg_id: message.id
-        }
+      def build_record(message)
+        begin
+          body = JSON.parse(message.body)
+        rescue => e
+          @log.warn "Error decoding JSON from the body of `#{message}`"
+          body = message.body
+        end
+        record = { body: body,
+                   address: message.address,
+                   msg_id: message.id }
         record[:properties] = message.properties if (message.properties and message.properties.size > 0)
         record[:annotations] = message.annotations if (message.annotations and message.annotations.size > 0)
         record[:instructions] = message.instructions if (message.instructions and message.instructions.size > 0)
@@ -102,16 +112,6 @@ module Fluent
         record[:user_id] = message.user_id if (message.user_id and message.user_id.size > 0)
         record[:correlation_id] = message.correlation_id if (message.correlation_id and message.correlation_id.size > 0)
         record[:creation_time] = message.creation_time if (message.creation_time and message.creation_time > 0)
-        record
-      end
-
-      def build_record(message)
-        begin
-          record = build_json_record(message)
-        rescue => e
-          @log.warn "Error decoding JSON from the body of `#{message}`"
-          record = { body: message }
-        end
         record
       end
 

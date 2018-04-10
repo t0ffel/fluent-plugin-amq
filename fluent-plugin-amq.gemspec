@@ -3,7 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
     s.name              = "fluent-plugin-amq"
-    s.version           = "0.0.4"
+    s.version           = "0.0.6"
     s.authors           = ["Anton Sherkhonov"]
     s.email             = ["sherkhonov@gmail.com"]
     s.homepage          = "https://github.com/t0ffel/fluent-plugin-amq"
